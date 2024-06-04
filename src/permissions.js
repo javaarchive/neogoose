@@ -1,6 +1,8 @@
 import { DataTypes } from "sequelize";
 import {Module} from "./module.js";
 
+import {Constants} from "@projectdysnomia/dysnomia";
+
 export class Permissions extends Module {
 
     id = "perms";
@@ -46,7 +48,33 @@ export class Permissions extends Module {
             name: "test",
             description: "Test command for perms."
         });
+        this.registerCommand({
+            name: "perm",
+            description: "Configure permission.",
+            options: [
+                {
+                    name: "target",
+                    description: "Snowflake ID of struct to configure permission for. Examples: channel/guild id. Role id also works.",
+                    type: Constants.ApplicationCommandOptionTypes.INTEGER
+                },
+                {
+                    name: "key",
+                    type: Constants.ApplicationCommandOptionTypes.STRING,
+                    description: "Permission key to change",
+                },
+                {
+                    name: "value",
+                    type: Constants.ApplicationCommandOptionTypes.STRING,
+                    description: "Value to set it to. undefined or none to have no effect."
+                }
+            ]
+        }, this.handlePermChange.bind(this), ["permission", "set_perm"]);
     }
+
+    async handlePermChange(interaction){
+
+    }
+
 
     // TODO: role based perms
 

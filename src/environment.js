@@ -229,9 +229,11 @@ class Environment extends EventEmitter {
     }
 
     async sync(){
-        await this.sequelize.sync({
-            alter: true
-        });
+        if(!process.env.SKIP_SEQUELIZE_SYNC){
+            await this.sequelize.sync({
+                alter: true
+            });
+        }
     }
 
     async teardown(){
