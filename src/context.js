@@ -116,7 +116,8 @@ export class Context {
             guild: this.guildID,
             member: this.memberID,
             message: this.messageID,
-            thread: this.threadID
+            thread: this.threadID,
+            roles: this.roles.map(role => role.id)
         };
     }
 }

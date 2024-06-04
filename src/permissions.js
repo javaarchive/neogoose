@@ -69,21 +69,49 @@ export class Permissions extends Module {
                         key: key,
                         contextID: context.guildID || 0
                     };
-                })
+                }).concat(ctxObj.roles.map(roleID => {
+                    return {
+                        selectorType: "role",
+                        selectorID: BigInt(roleID),
+                        key: key,
+                        contextID: context.guildID || 0
+                    }
+                }))
             }
         });
         let permMap = {};
         for(let permRow of selectedPerms){
-            permMap[permRow.selectorType] = permRow;
-        }
-        // kinda braindead
-        let value = null;
-        for(let type of types){
-            if(type in permMap){
-                value = permMap[type];
+            if(permRow.selectorType == "role"){
+                permMap[permRow.selectorID.toString()] = permRow;
+            }else{
+                permMap[permRow.selectorType] = permRow;
             }
         }
-        return value;
+        // kinda braindead
+        let trace = [];
+        for(let type of types){
+            if(type in permMap){
+                trace.push({
+                    type: type,
+                    value: permMap[type].value,
+                    id: ctxObj[type],
+                    selectorID: ctxObj[type]
+                })
+            }
+        }
+
+        for(let roleID of ctxObj.roles){
+            if(roleID in permMap){
+                trace.push({
+                    type: "role",
+                    value: permMap[roleID].value,
+                    id: roleID,
+                    selectorID: roleID
+                })
+            }
+        }
+        // apply roles now
+        return trace;
     }
     
     /**
@@ -94,7 +122,21 @@ export class Permissions extends Module {
      * @memberof PermissionsModule
      */
     async checkPermission(context, permission){
-        
+        let resolved = await this.resolve(context, permission);
+        let result = Object.create(null,{});
+        for(let element of trace){
+            const value = element.value;
+            if(typeof value == "object"){
+                if(Array.isArray(value)){
+                    result = value;
+                }else{
+                    Object.assign(result, value);
+                }
+            }else{
+                result = value;
+            }
+        }
+        return result;
     }
 }
 
