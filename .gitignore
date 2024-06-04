@@ -133,3 +133,4 @@ dist
 database
 *.sqlite
 *.db
+*.log

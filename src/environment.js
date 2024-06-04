@@ -1,16 +1,31 @@
 import {EventEmitter} from "events";
-import {Client} from "@projectdysnomia/dysnomia";
+import {Client, CommandInteraction} from "@projectdysnomia/dysnomia";
 import {Sequelize} from "sequelize";
+import { getDefaultLogger } from "./logger.js";
 
 class Environment extends EventEmitter {
-
-
     /**
      * @type {import("./module").Module[]}
      *
      * @memberof Environment
      */
     modules = [];
+
+    /**
+     * @type {import("winston").Logger}
+     *
+     * @memberof Environment
+     */
+    logger;
+
+    commands = [];
+    commandHandlers = new Map();
+
+    /**
+     * @type {Client}
+     * @memberof Environment
+     */
+    bot;
 
     /**
      * Creates an instance of Environment.
@@ -23,6 +38,11 @@ class Environment extends EventEmitter {
         super(options);
         this.bot = bot;
         this.sequelize = sequelize;
+        if(options.logger){
+            this.logger = options.logger;
+        }else{
+            this.logger = getDefaultLogger();
+        }
     }
 
     /**
@@ -49,6 +69,14 @@ class Environment extends EventEmitter {
         this.modules.push(module);
     }
 
+    static resolveModuleInfo(query){
+        if(query.name){
+            return query.name;
+        }else{
+            return query;
+        }
+    }
+
     /**
      * 
      *
@@ -57,7 +85,11 @@ class Environment extends EventEmitter {
      * @memberof Environment
      */
     getModule(name){
-        return this.modules.find(module => module.constructor.name == name || module.constructor.name == name.name);
+        let module = this.modules.find(module => module.constructor.name == Environment.resolveModuleInfo(name));
+        if(!module){
+            throw new Error("Could not find module of type " + Environment.resolveModuleInfo(name));
+        }
+        return module;
     }
 
 
@@ -67,13 +99,16 @@ class Environment extends EventEmitter {
      * @memberof Environment
      */
     async lifecycleLoad(){
+        this.logger.info('Starting load segment');
         this.emit("beginLoad");
         await this.load();
         this.emit("endEnvLoad");
+        this.logger.info('Starting load segment of modules');
         for(let module of this.modules){
             await module.load();
         }
         this.emit("endLoad");
+        this.logger.info('Ending load segment');
     }
 
     /**
@@ -82,13 +117,16 @@ class Environment extends EventEmitter {
      * @memberof Environment
      */
     async lifecycleSync(){
+        this.logger.info('Starting sync segment');
         this.emit("beginSync");
         await this.sync();
         this.emit("endEnvSync");
+        this.logger.info('Starting sync segment for modules');
         for(let module of this.modules){
             await module.sync();
         }
         this.emit("endSync");
+        this.logger.info('Ending sync segment');
     }
 
     /**
@@ -97,20 +135,57 @@ class Environment extends EventEmitter {
      * @memberof Environment
      */
     async lifecycleInit(){
+        this.logger.info('Starting init segment');
         this.emit("beginInit");
         await this.init();
         this.emit("endEnvInit")
+        this.logger.info('Starting init segment for modules');
         for(let module of this.modules){
             await module.init();
         }
         this.emit("endInit");
+        this.logger.info('Ending init segment for modules');
+
+        // bot init
+        for(let module of this.modules){
+            this.commands.push(...module.getCommands());
+        }
+        this.logger.info("Propogating guild commands.");
+        let eaGuilds = (process.env.EA_GUILDS || "").split(" ");
+        if(!process.env.EA_GUILDS) eaGuilds = [];
+        if(eaGuilds.length){
+            this.logger.info("Found " + eaGuilds.length + " ea guilds.");
+        }
+        for(let guildID of eaGuilds){
+            this.logger.info("Propogating to " + guildID);
+            await this.bot.bulkEditGuildCommands(guildID, this.commands);
+            this.logger.info("Propogated to " + guildID);
+        }
+        this.logger.info("Propogating global commands.");
+        await this.bot.bulkEditCommands(this.commands);
+        this.logger.info("Propogated global commands.");
+        this.bot.on("interactionCreate", (interaction) => {
+            this.emit("interactionCreate", interaction);
+
+        });
+        this.logger.info("Finished init.");
     }
 
     async lifecycleTeardown(){
-        await this.teardown();
+        this.logger.info('Performing teardown for modules');
         for(let module of this.modules){
             await module.teardown();
         }
+        this.logger.info('Performing teardown for env');
+        await this.teardown();
+        this.logger.info("Teardown complete.");
+    }
+
+    registerCommandHandler(name, func){
+        if(this.commandHandlers.get(name)){
+            this.logger.warn("Duplicate handler registering for " + name);
+        }
+        this.commandHandlers.set(name, func);
     }
 
     async quickInit(){
@@ -123,8 +198,34 @@ class Environment extends EventEmitter {
         await this.sequelize.authenticate();
     }
 
-    async init(){
+    createError(errorMessage, isInteraction = false){
+        let messageDetails = {
+            content: "An error occurred: `" + errorMessage + "`"
+        }
+        if(errorMessage.includes("\n")){
+            messageDetails.content = "A long error occurred: ```" + errorMessage + "```";
+        }
+        if(messageDetails.content.length > 1000){
+            messageDetails.content = "A very long error occurred, the error has been uploaded as a file. (TODO: impl)";
+        }
+        if(isInteraction){
+            messageDetails.flags = 64; // ephermal
+        }
+        return messageDetails;
+    }
 
+    async init(){
+        this.bot.on("interactionCreate", async (anyInteraction) => {
+            if(anyInteraction instanceof CommandInteraction){
+                let cmdInteraction = anyInteraction;
+                let handler = this.commandHandlers.get(cmdInteraction.data.id) || this.commandHandlers.get(cmdInteraction.data.name);
+                if(handler){
+                    handler(cmdInteraction);
+                }else{
+                    await cmdInteraction.createMessage(this.createError(`${cmdInteraction.data.name} did not have a handler registered.`, true));
+                }
+            }
+        });
     }
 
     async sync(){

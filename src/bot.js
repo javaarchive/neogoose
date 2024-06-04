@@ -9,18 +9,17 @@ const bot = new Client(process.env.TOKEN, {
 
 });
 
-const environment = Environment.load_from_env();
-
+const environment = Environment.load_from_env(bot);
 
 (async () => {
     await bot.connect();
     console.log("Bot connect promise returned");
     
-    modules.forEach((module) => {
-        environment.addModule(module);
+    modules.forEach((ModuleConstructor) => {
+        environment.addModule(new ModuleConstructor(environment));
     });
 
     await environment.quickInit();
     
-    console.log("initalized");
+    console.log("Initalized");
 })()
