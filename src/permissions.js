@@ -188,15 +188,15 @@ export class Permissions extends Module {
         }
 
         try{
-            let guild = await this.bot.getChannel(snowflake);
-            if(guild.id){
+            let channel = await this.bot.getChannel(snowflake);
+            if(channel.id){
                 return "channel";
             }
         }catch(ex){
 
         }
 
-        
+
 
     }
     
