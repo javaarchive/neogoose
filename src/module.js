@@ -1,3 +1,5 @@
+import { Client } from "@projectdysnomia/dysnomia";
+
 class Module {
 
     aliases = [];
@@ -5,17 +7,14 @@ class Module {
     commands = [];
 
     /**
-     * @type {Map<string,string>}
+     * @returns {Client}
      *
+     * @readonly
      * @memberof Module
      */
-    commandAliasMap = new Map();
-    /**
-     * @type {Map<string,string>}
-     *
-     * @memberof Module
-     */
-    commandHelpMap = new Map();
+    get bot(){
+        return this.environment.bot;
+    }
 
     getCommands(){
         return this.commands;
@@ -39,7 +38,7 @@ class Module {
             this.registerCommandHandler(command, handler);
         }
         for(let alias of aliases){
-            this.commandAliasMap.set(alias, command.name);
+            this.environment.registerAlias(alias, command.name);
             let modifiedCommand = {
                 ...command,
                 name: alias
@@ -47,14 +46,6 @@ class Module {
             this.commands.push(modifiedCommand);
             this.registerCommandHandler(modifiedCommand, handler);
         }
-    }
-
-    isCommandAlias(name){
-        return this.commandAliasMap.has(name);
-    }
-
-    registerCommandHelp(commandName, helpMessage){
-        this.commandHelpMap.set(commandName, helpMessage);
     }
 
     /**

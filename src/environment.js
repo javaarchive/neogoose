@@ -1,5 +1,5 @@
 import {EventEmitter} from "events";
-import {Client, CommandInteraction} from "@projectdysnomia/dysnomia";
+import {AutocompleteInteraction, Client, CommandInteraction} from "@projectdysnomia/dysnomia";
 import {Sequelize} from "sequelize";
 import { getDefaultLogger } from "./logger.js";
 
@@ -26,6 +26,52 @@ class Environment extends EventEmitter {
      * @memberof Environment
      */
     bot;
+
+    /**
+     * @type {Map<string,string>}
+     *
+     * @memberof Module
+     */
+    commandAliasMap = new Map();
+    /**
+     * @type {Map<string,string>}
+     *
+     * @memberof Module
+     */
+    commandHelpMap = new Map();
+
+    isCommandAlias(name){
+        return this.commandAliasMap.has(name);
+    }
+
+    registerAlias(alias, orig){
+        this.commandAliasMap.set(alias, orig);
+    }
+
+    registerCommandHelp(commandName, helpMessage){
+        this.commandHelpMap.set(commandName, helpMessage);
+    }
+
+    resolveAlias(possibleAlias){
+        return this.commandAliasMap.get(possibleAlias) || possibleAlias;
+    }
+
+    otherInteractionHandlers = {
+        "autocomplete": new Map()
+    }
+
+    async triggerInteraction(name, type, interaction){
+        let id = this.resolveAlias(name);
+        if(this.otherInteractionHandlers[type] && this.otherInteractionHandlers[type].get(id)){
+            let func = this.otherInteractionHandlers[type].get(id);
+            await func(interaction);
+        }
+    }
+
+    registerOtherInteractionHandler(name, type, handler){
+        this.logger.info("Registering a " + type + " handler for command " + name);
+        this.otherInteractionHandlers[type].set(name, handler);
+    }
 
     /**
      * Creates an instance of Environment.
@@ -188,6 +234,10 @@ class Environment extends EventEmitter {
         this.commandHandlers.set(name, func);
     }
 
+    findModuleThat(where){
+        return this.modules.find(where);
+    }
+
     async quickInit(){
         await this.lifecycleLoad();
         await this.lifecycleSync();
@@ -218,12 +268,20 @@ class Environment extends EventEmitter {
         this.bot.on("interactionCreate", async (anyInteraction) => {
             if(anyInteraction instanceof CommandInteraction){
                 let cmdInteraction = anyInteraction;
+                this.logger.info("Recv command interaction " + cmdInteraction.data.id + " " + cmdInteraction.data.name);
                 let handler = this.commandHandlers.get(cmdInteraction.data.id) || this.commandHandlers.get(cmdInteraction.data.name);
                 if(handler){
-                    handler(cmdInteraction);
+                    await handler(cmdInteraction);
                 }else{
                     await cmdInteraction.createMessage(this.createError(`${cmdInteraction.data.name} did not have a handler registered.`, true));
                 }
+            }else if(anyInteraction instanceof AutocompleteInteraction){
+                /**
+                 * @param {AutocompleteInteraction}
+                 */
+                let autoCompleteInteraction = anyInteraction;
+                let name = autoCompleteInteraction.data.name;
+                await this.triggerInteraction(name, "autocomplete", autoCompleteInteraction);
             }
         });
     }

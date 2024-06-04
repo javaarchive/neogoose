@@ -12,14 +12,14 @@ const bot = new Client(process.env.TOKEN, {
 const environment = Environment.load_from_env(bot);
 
 (async () => {
-    await bot.connect();
-    console.log("Bot connect promise returned");
-    
-    modules.forEach((ModuleConstructor) => {
-        environment.addModule(new ModuleConstructor(environment));
+    bot.once("ready", async () => {
+        environment.logger.info("Ready recieved, initing all modules");
+        modules.forEach((ModuleConstructor) => {
+            environment.addModule(new ModuleConstructor(environment));
+        });
+        await environment.quickInit();
+        environment.logger.info("Systems up.");
     });
-
-    await environment.quickInit();
-    
-    console.log("Initalized");
+    await bot.connect();
+    environment.logger.info("Bot connect promise returned");
 })()
