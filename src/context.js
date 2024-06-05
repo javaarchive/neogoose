@@ -132,14 +132,20 @@ export class Context {
         }
         if(interaction.member && interaction.member.roles){
             this.roles = interaction.member.roles.map(role_id => {
-                id: role_id
+                return {
+                    id: role_id
+                };
             });
+        }
+        if(interaction.user && interaction.user.id){
+            this.authorID = interaction.user.id;
         }
     }
 
     toObject(){
         return {
             author: this.authorID,
+            user: this.authorID,
             channel: this.channelID,
             category: this.categoryID,
             guild: this.guildID,

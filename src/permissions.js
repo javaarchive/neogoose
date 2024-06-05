@@ -243,6 +243,8 @@ export class Permissions extends Module {
             let report = "# Permission Explainer:\n";
             report += "Note that guild permissions are different than perms in DMs.\n"
 
+            console.log("Roles",context.roles);
+
             const trace = await this.resolve(context, key);
 
             for(let element of trace){
@@ -335,7 +337,7 @@ export class Permissions extends Module {
      * @param {string} [types=["guild", "category", "channel", "thread"]]
      * @memberof Permissions
      */
-    async resolve(context, key, types = ["guild", "category", "channel", "thread"]){
+    async resolve(context, key, types = ["guild", "category", "channel", "thread", "author"]){
         let ctxObj = context.toObject();
         let selectedPerms = await this.Permission.findAll({
             where: {
@@ -359,7 +361,10 @@ export class Permissions extends Module {
         let permMap = {};
         for(let permRow of selectedPerms){
             if(permRow.selectorType == "role"){
-                permMap[permRow.selectorID.toString()] = permRow;
+                // sequelize doesn't retrieve back BigInts properly and breaks them
+                // so we employ this backup hack
+                let realRoleID = permRow.id.split(":")[2]; 
+                permMap[realRoleID] = permRow;
             }else{
                 permMap[permRow.selectorType] = permRow;
             }
@@ -378,6 +383,7 @@ export class Permissions extends Module {
         }
 
         for(let roleID of ctxObj.roles){
+            console.log(roleID, typeof roleID, " chk ", permMap);
             if(roleID in permMap){
                 trace.push({
                     type: "role",
