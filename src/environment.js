@@ -297,6 +297,11 @@ class Environment extends EventEmitter {
     async teardown(){
 
     }
+
+    installErrorHandlingHooks(){
+        process.on("unhandledRejection", this.logger.error.bind(this.logger));
+        process.on("uncaughtException", this.logger.error.bind(this.logger));
+    }
 }
 
 export {Environment};

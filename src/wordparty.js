@@ -58,8 +58,15 @@ export class WordParty extends Module {
             let seqSet = new Set();
             let local_wpp = {};
             words.forEach((word) => {
+                // size 2 slices
                 for(let i = 0; i < word.length - 1; i ++){
                     const slice = word.slice(i, i + 2);
+                    seqSet.add(slice);
+                    local_wpp[slice] = (local_wpp[slice] || 0) + 1;
+                }
+                // size 3 slices
+                for(let i = 0; i < word.length - 2; i ++){
+                    const slice = word.slice(i, i + 3);
                     seqSet.add(slice);
                     local_wpp[slice] = (local_wpp[slice] || 0) + 1;
                 }
@@ -106,6 +113,12 @@ export class WordParty extends Module {
                     min_value: 1,
                     required: true,
                     description: "Min words per part, lower is harder"
+                },
+                {
+                    name: "lowercase",
+                    type: Constants.ApplicationCommandOptionTypes.BOOLEAN,
+                    required: false,
+                    description: "Force lowercase sequences only. Useful because debian dictionaries are funny. You can still submit uppercase words though."
                 }
             ]
         }, this.newRound.bind(this), ["new_wordparty"]);
@@ -139,8 +152,12 @@ export class WordParty extends Module {
         let options = interaction.data.options;
         const key = options.find(opt => opt.name == "list").value;
         const wpp = parseInt(options.find(opt => opt.name == "wpp").value);
+        const lowercase = options.find(opt => opt.name == "lowercase").value || false;
         let tries = 0;
-        const list = this.sequences[key].filter(seq => this.wpp[key][seq] >= wpp);
+        let list = this.sequences[key].filter(seq => this.wpp[key][seq] >= wpp);
+        if(lowercase){
+            list = list.filter((word) => word == word.toLowerCase());
+        }
         if(list.length < 1){
             await interaction.createFollowup("Couldn't satsify wpp option.");
             return;

@@ -11,6 +11,8 @@ const bot = new Client(process.env.TOKEN, {
 
 const environment = Environment.load_from_env(bot);
 
+environment.installErrorHandlingHooks();
+
 (async () => {
     bot.once("ready", async () => {
         environment.logger.info("Ready recieved, initing all modules");
