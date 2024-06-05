@@ -132,5 +132,7 @@ dist
 
 database
 *.sqlite
+*.sqlite-journal
 *.db
 *.log
+

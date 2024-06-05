@@ -118,7 +118,7 @@ export class WordParty extends Module {
                     name: "lowercase",
                     type: Constants.ApplicationCommandOptionTypes.BOOLEAN,
                     required: false,
-                    description: "Force lowercase sequences only. Useful because debian dictionaries are funny. You can still submit uppercase words though."
+                    description: "force lowercase seqs. use because some dictionaries are funny."
                 }
             ]
         }, this.newRound.bind(this), ["new_wordparty"]);
