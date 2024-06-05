@@ -383,7 +383,6 @@ export class Permissions extends Module {
         }
 
         for(let roleID of ctxObj.roles){
-            console.log(roleID, typeof roleID, " chk ", permMap);
             if(roleID in permMap){
                 trace.push({
                     type: "role",
