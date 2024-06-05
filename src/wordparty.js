@@ -11,10 +11,12 @@ const LISTS = {
     "Debian American English": "/usr/share/dict/american-english",
     "Debian British English": "/usr/share/dict/canadian-english",
     "Debian Canadian English": "/usr/share/dict/british-english",
+    "Unofficial Bomb Party Words": "assets/bombparty.txt"
 }
 
 const TRIES = 32768 * 32;
 
+// very bad bomb party style game
 export class WordParty extends Module {
 
     id = "wordparty";
@@ -52,7 +54,7 @@ export class WordParty extends Module {
         
         for(let key of Object.keys(LISTS)){
             this.logger.info("Processing list " + key);
-            let words = (await fs.promises.readFile(LISTS[key], "utf8")).replace("\r\n", "\n").split("\n");
+            let words = (await fs.promises.readFile(LISTS[key], "utf8")).replace(/\r\n/g, '\n').split("\n");
             this.wordsets[key] = new Set(words);
             this.words[key] = words;
             let seqSet = new Set();
@@ -152,7 +154,7 @@ export class WordParty extends Module {
         let options = interaction.data.options;
         const key = options.find(opt => opt.name == "list").value;
         const wpp = parseInt(options.find(opt => opt.name == "wpp").value);
-        const lowercase = options.find(opt => opt.name == "lowercase").value || false;
+        const lowercase = (options.find(opt => opt.name == "lowercase") || {value:false}).value;
         let tries = 0;
         let list = this.sequences[key].filter(seq => this.wpp[key][seq] >= wpp);
         if(lowercase){
