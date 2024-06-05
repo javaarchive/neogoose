@@ -1,4 +1,4 @@
-import {Client, Message, Guild, Channel, Role} from "@projectdysnomia/dysnomia";
+import {Client, Message, Guild, Channel, Role, CommandInteraction} from "@projectdysnomia/dysnomia";
 
 export class Context {
     
@@ -50,8 +50,6 @@ export class Context {
     }
 
     /**
-     *
-     *
      * @static
      * @param {import("./environment").Environment} environment
      * @param {Message} message
@@ -60,6 +58,18 @@ export class Context {
     static async buildFromMessage(environment, message){
         let ctx = new Context();
         ctx.fillFromMessage(environment, message);
+        return ctx;
+    }
+
+    /**
+     * @static
+     * @param {import("./environment").Environment} environment
+     * @param {CommandInteraction} message
+     * @memberof Context
+     */
+    static async buildFromCommandInteraction(environment, interaction){
+        let ctx = new Context();
+        ctx.fillFromCommandInteraction(environment, interaction);
         return ctx;
     }
 
@@ -105,6 +115,25 @@ export class Context {
             if(message.thread.id){
                 this.threadID = message.thread.id;
             }
+        }
+    }
+
+    /**
+     * @param {import("./environment").Environment} environment
+     * @param {CommandInteraction} interaction
+     * @memberof Context
+     */
+    async fillFromCommandInteraction(environment, interaction){
+        if(interaction.guildID){
+            this.guildID = interaction.guildID;
+        }
+        if(interaction.channel && interaction.channel.id){
+            this.channelID = interaction.channel.id;
+        }
+        if(interaction.member && interaction.member.roles){
+            this.roles = interaction.member.roles.map(role_id => {
+                id: role_id
+            });
         }
     }
 

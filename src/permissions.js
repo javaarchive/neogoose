@@ -1,12 +1,22 @@
 import { DataTypes } from "sequelize";
-import {Module} from "./module.js";
+import {Module, OPTION_AUTOCOMPLETE_DEFAULT} from "./module.js";
 
-import {CommandInteraction, Constants} from "@projectdysnomia/dysnomia";
+import {AutocompleteInteraction, CommandInteraction, Constants} from "@projectdysnomia/dysnomia";
 
 export class Permissions extends Module {
 
     id = "perms";
     aliases = ["perm", "acl"]
+    permissionRegistry = new Map();
+
+    static BOOL = "bool";
+
+    registerPermission(key, type, defaultValue){
+        this.permissionRegistry.set(key, {
+            type: type,
+            defaultValue: defaultValue
+        });
+    }
 
     /**
      * Creates an instance of PermissionsModule.
@@ -36,8 +46,16 @@ export class Permissions extends Module {
             contextID: { // usually 0 for dms, or the guildID if applicable
                 type: DataTypes.BIGINT,
                 allowNull: false
+            },
+            id: {
+                type: DataTypes.STRING,
+                allowNull: false,
+                primaryKey: true
             }
         });
+
+        this.registerPermission("core.admin", Permissions.BOOL, false);
+
         this.logger.info("Defined permission model");
 
         this.registerCommand({
@@ -46,8 +64,17 @@ export class Permissions extends Module {
         });
         this.registerCommand({
             name: "test",
-            description: "Test command for perms."
-        });
+            description: "Test command for perms.",
+            options: [
+                {
+                    name: "key",
+                    type: Constants.ApplicationCommandOptionTypes.STRING,
+                    description: "Permission key to change",
+                    required: true,
+                    autocomplete: true
+                }
+            ]
+        }, this.testPermission.bind(this), ["debug_perm"]);
         this.registerCommand({
             name: "perm",
             description: "Configure permission.",
@@ -56,22 +83,163 @@ export class Permissions extends Module {
                     name: "target",
                     description: "Snowflake ID of struct to configure permission for. Examples: channel/guild id. Role id also works.",
                     type: Constants.ApplicationCommandOptionTypes.STRING,
-                    required: true
+                    required: true,
+                    autocomplete: true
                 },
                 {
                     name: "key",
                     type: Constants.ApplicationCommandOptionTypes.STRING,
                     description: "Permission key to change",
-                    required: true
+                    required: true,
+                    autocomplete: true
                 },
                 {
                     name: "value",
                     type: Constants.ApplicationCommandOptionTypes.STRING,
-                    description: "Value to set it to. undefined or none to have no effect.",
-                    required: true
+                    description: "Value to set it to. none to have no effect.",
+                    required: true,
+                    autocomplete: true
                 }
             ]
         }, this.handlePermChange.bind(this), ["permission", "set_perm"]);
+        this.registerCommand({
+            name: "guess",
+            description: "Identify struct type by snowflake",
+            options: [
+                {
+                    name: "snowflake",
+                    description: "Snowflake ID of struct to guess.",
+                    type: Constants.ApplicationCommandOptionTypes.STRING,
+                    required: true
+                }
+            ]
+        }, this.testGuess.bind(this), ["identify"]);
+        this.environment.registerOtherInteractionHandler("perm", "autocomplete", this.autocompleteSetPerm.bind(this));
+        this.environment.registerOtherInteractionHandler("test", "autocomplete", this.autocompleteTestPerm.bind(this));
+    }
+
+    /**
+     * 
+     *
+     * @param {AutocompleteInteraction} interaction
+     * @memberof Permissions
+     */
+    suggestAutocompleteTargets(interaction){
+        let suggestions = [];
+        if(interaction.guildID){
+            suggestions.push({
+                name: "Guild",
+                value: interaction.guildID
+            });
+        }
+        if(interaction.user){
+            suggestions.push({
+                name: "Yourself",
+                value: interaction.user.id
+            });
+        }
+        if(interaction.channel){
+            suggestions.push({
+                name: "Channel",
+                value: interaction.channel.id
+            });
+        }
+        return suggestions;
+    }
+
+    suggestAutocompleteKeys(option){
+        let value = option.value || "";
+        let canidates = Array.from(this.permissionRegistry.keys()).filter(key => key.includes(value));
+        let completions = [];
+        if(canidates.length > 10){
+            canidates = canidates.slice(0, 10);
+        }
+        canidates.forEach((canidate) => {
+            completions.push({
+                name: canidate,
+                value: canidate
+            });
+        });
+        return completions;
+    }
+
+     /**
+     * 
+     *
+     * @param {AutocompleteInteraction} interaction
+     * @memberof Permissions
+     */
+     async autocompleteTestPerm(interaction){
+        let keyOption = interaction.data.options.find(opt => opt.name == "key") || OPTION_AUTOCOMPLETE_DEFAULT;
+        await interaction.acknowledge(this.suggestAutocompleteKeys(keyOption));
+     }
+
+    /**
+     * 
+     *
+     * @param {AutocompleteInteraction} interaction
+     * @memberof Permissions
+     */
+    async autocompleteSetPerm(interaction){
+        console.log(interaction.data.options);
+        let targetOption = interaction.data.options.find(opt => opt.name == "target") || OPTION_AUTOCOMPLETE_DEFAULT;
+        let keyOption = interaction.data.options.find(opt => opt.name == "key") || OPTION_AUTOCOMPLETE_DEFAULT;
+        let valueOption = interaction.data.options.find(opt => opt.name == "value") || OPTION_AUTOCOMPLETE_DEFAULT;
+        let currentPermKey = keyOption.value;
+        let completions = [];
+        if(targetOption.focused){
+            completions.push(...this.suggestAutocompleteTargets(interaction));
+        }
+        if(keyOption.focused){
+            completions.push(...this.suggestAutocompleteKeys(keyOption));
+        }
+        let exactMatch = this.permissionRegistry.get(currentPermKey);
+        if(exactMatch){
+            if(valueOption.focused){
+                if(exactMatch.type == Permissions.BOOL){
+                    completions.push({
+                        name: "Allow / True",
+                        value: "true"
+                    });
+                    completions.push({
+                        name: "Deny / False",
+                        value: "false"
+                    });
+                    completions.push({
+                        name: "None",
+                        value: "none"
+                    });
+                }
+            }
+        }
+        await interaction.result(completions);
+    }
+
+    /**
+     *
+     * @param {CommandInteraction} interaction
+     * @memberof Permissions
+     */
+    async testGuess(interaction){
+        await interaction.acknowledge();
+        await interaction.createFollowup("Identified as " + (await this.guessStructType(interaction, interaction.data.options[0].value, false)));
+    }
+
+    /**
+     *
+     * @param {CommandInteraction} interaction
+     * @memberof Permissions
+     */
+    async testPermission(interaction){
+        await interaction.acknowledge();
+        let keyOption = interaction.data.options[0];
+        let key = keyOption.value;
+        if(this.permissionRegistry.get(key)){
+            // create report
+            await interaction.createFollowup("OK");
+        }else{
+            await interaction.createFollowup("🚫 Permission key not found.");
+        }
     }
 
     /**
@@ -89,8 +257,43 @@ export class Permissions extends Module {
         }
         if(!allowed){
             await interaction.createFollowup("🚫 Insufficient permissions. You either lack administrator status in this conversation or the `core.admin` permission.");
+            return;
         }
-        await interaction.createFollowup("✅ Access granted. TODO");
+
+        let options = interaction.data.options;
+        console.log(options);
+
+        let type = await this.guessStructType(interaction, options[0].value, true);
+        if(!type){
+            await interaction.createFollowup("🚫 Could not guess snowflake struct type.");
+            return;
+        }
+
+        if(!this.permissionRegistry.get(options[1].value)){
+            await interaction.createFollowup("🚫 Permission key not found.");
+            return;
+        }
+
+        let id_number = BigInt(options[0].value);
+        let contextID = BigInt(interaction.guildID || "0");
+        const row_id = contextID + ":" + type + ":" + id_number;
+
+        try{
+            let parsedValue = JSON.parse(options[2].value);
+
+            await this.Permission.upsert({
+                selectorType: type,
+                selectorID: id_number,
+                key: options[1].value,
+                value: parsedValue,
+                contextID: contextID,
+                id: row_id
+            });
+
+            await interaction.createFollowup("✅ Updated permission for `" + row_id + "`");
+        }catch(ex){
+            await interaction.createFollowup("🚫 Invalid value.");
+        }
     }
 
 
@@ -170,21 +373,14 @@ export class Permissions extends Module {
      * @memberof Permissions
      */
     async guessStructType(interaction, snowflake, ctxMode = false){
+        
         try{
-            let user = await this.bot.getRESTUser(snowflake);
-            if(user.username){
-                return ctxMode ? "author" : "user";
-            }
-        }catch(ex){
-
-        }
-        try{
-            let guild = await this.bot.getRESTGuild(snowflake);
-            if(guild.id){
+            let integrations = await this.bot.getGuildIntegrations(snowflake);
+            if(integrations){
                 return "guild";
             }
         }catch(ex){
-
+            // console.log("Guild guess failed",ex);
         }
 
         try{
@@ -193,11 +389,29 @@ export class Permissions extends Module {
                 return "channel";
             }
         }catch(ex){
+            // console.log("Channel guess failed",ex);
+        }
+
+        // TODO: support threads and categories 9ez cause it's a channel)
+        try{
+            if(interaction.member && interaction.guildID){
+                let roles = await this.bot.getRESTGuildRoles(interaction.guildID);
+                if(roles.find(role => role.id == snowflake)) return "role";
+            }
+        }catch(ex){
 
         }
 
+        try{
+            let user = await this.bot.getRESTUser(snowflake);
+            if(user.username){
+                return ctxMode ? "author" : "user";
+            }
+        }catch(ex){
+            console.log("User guess failed",ex);
+        }
 
-
+        return null;
     }
     
     /**

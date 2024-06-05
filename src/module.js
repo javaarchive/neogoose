@@ -1,5 +1,7 @@
 import { Client } from "@projectdysnomia/dysnomia";
 
+export const OPTION_AUTOCOMPLETE_DEFAULT = {value: "", focused: false};
+
 class Module {
 
     aliases = [];

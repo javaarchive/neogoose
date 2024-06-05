@@ -6,7 +6,7 @@ import {config as configureDotenv} from "dotenv";
 configureDotenv();
 
 const bot = new Client(process.env.TOKEN, {
-
+    restMode: true
 });
 
 const environment = Environment.load_from_env(bot);
