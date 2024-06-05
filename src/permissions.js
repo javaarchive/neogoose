@@ -1,7 +1,8 @@
-import { DataTypes } from "sequelize";
+import { DataTypes, Op } from "sequelize";
 import {Module, OPTION_AUTOCOMPLETE_DEFAULT} from "./module.js";
 
 import {AutocompleteInteraction, CommandInteraction, Constants} from "@projectdysnomia/dysnomia";
+import Context from "./context.js";
 
 export class Permissions extends Module {
 
@@ -233,10 +234,37 @@ export class Permissions extends Module {
     async testPermission(interaction){
         await interaction.acknowledge();
         let keyOption = interaction.data.options[0];
-        let key = keyOption.value;
+        const key = keyOption.value;
+        let context = await Context.buildFromCommandInteraction(this.environment, interaction);
         if(this.permissionRegistry.get(key)){
             // create report
-            await interaction.createFollowup("OK");
+            // await interaction.createFollowup("OK");
+            const permDetails = this.permissionRegistry.get(key);
+            let report = "# Permission Explainer:\n";
+            report += "Note that guild permissions are different than perms in DMs.\n"
+
+            const trace = await this.resolve(context, key);
+
+            for(let element of trace){
+                let extra = "";
+                if(typeof element.value == "boolean"){
+                    extra = element.value ? "✅" : "❌";
+                }
+                report += `${element.type} ${element.selectorID} contributes a value of \`${JSON.stringify(element.value)}\` ${extra}\n`;
+            }
+
+            let finalValue = await this.checkPermission(context, key, permDetails.defaultValue);
+
+            report += "\nFinal determined value: " + JSON.stringify(finalValue,null,4);
+            await interaction.createFollowup({
+                content: report,
+                allowedMentions: {
+                    everyone: false,
+                    repliedUser: true,
+                    roles: false,
+                    users: false
+                }
+            });
         }else{
             await interaction.createFollowup("🚫 Permission key not found.");
         }
@@ -311,7 +339,7 @@ export class Permissions extends Module {
         let ctxObj = context.toObject();
         let selectedPerms = await this.Permission.findAll({
             where: {
-                $or: types.filter(type => ctxObj[type]).map((type) => {
+                [Op.or]: types.filter(type => ctxObj[type]).map((type) => {
                     return {
                         selectorType: type,
                         selectorID: BigInt(ctxObj[type]),
@@ -427,7 +455,7 @@ export class Permissions extends Module {
         if(base != null){
             result = base;
         }
-        for(let element of trace){
+        for(let element of resolved){
             const value = element.value;
             if(typeof value == "object"){
                 if(Array.isArray(value)){

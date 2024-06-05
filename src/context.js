@@ -57,7 +57,7 @@ export class Context {
      */
     static async buildFromMessage(environment, message){
         let ctx = new Context();
-        ctx.fillFromMessage(environment, message);
+        await ctx.fillFromMessage(environment, message);
         return ctx;
     }
 
@@ -69,7 +69,7 @@ export class Context {
      */
     static async buildFromCommandInteraction(environment, interaction){
         let ctx = new Context();
-        ctx.fillFromCommandInteraction(environment, interaction);
+        await ctx.fillFromCommandInteraction(environment, interaction);
         return ctx;
     }
 
