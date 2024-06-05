@@ -4,6 +4,8 @@ import {Module, OPTION_AUTOCOMPLETE_DEFAULT} from "./module.js";
 import {AutocompleteInteraction, CommandInteraction, Constants} from "@projectdysnomia/dysnomia";
 import Context from "./context.js";
 
+import {Permissions} from "./permissions.js";
+
 export class Example extends Module {
 
     id = "example";
@@ -16,6 +18,15 @@ export class Example extends Module {
      */
     constructor(environment){
         super(environment, "example");
+    }
+
+    /**
+     * @returns {Permissions}
+     * @readonly
+     * @memberof Example
+     */
+    get perms(){
+        return this.environment.getModule("perms");
     }
 
     async load(){

@@ -266,7 +266,6 @@ class Environment extends EventEmitter {
 
     async init(){
         this.bot.on("interactionCreate", async (anyInteraction) => {
-            console.log(anyInteraction);
             if(anyInteraction instanceof CommandInteraction){
                 let cmdInteraction = anyInteraction;
                 this.logger.info("Recv command interaction " + cmdInteraction.data.id + " " + cmdInteraction.data.name);
