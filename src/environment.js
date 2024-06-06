@@ -131,7 +131,7 @@ class Environment extends EventEmitter {
      * @memberof Environment
      */
     getModule(name){
-        let module = this.modules.find(module => module.constructor.name == Environment.resolveModuleInfo(name));
+        let module = this.modules.find(module => module.constructor.name == Environment.resolveModuleInfo(name) || module.id == name || module.aliases.includes(name));
         if(!module){
             throw new Error("Could not find module of type " + Environment.resolveModuleInfo(name));
         }

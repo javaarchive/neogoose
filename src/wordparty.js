@@ -7,6 +7,8 @@ import Context from "./context.js";
 import {Permissions} from "./permissions.js";
 import fs from "fs";
 
+// needs to be a newline seperated list of words
+// that's it
 const LISTS = {
     "Debian American English": "/usr/share/dict/american-english",
     "Debian British English": "/usr/share/dict/canadian-english",
@@ -47,6 +49,8 @@ export class WordParty extends Module {
         // this.environment.sequelize.define
 
         // get perm module to register perms
+
+        this.perms.registerPermission("wordparty.command.wpp", Permissions.BOOL, false);
 
         this.logger.info("Loading word lists");
         
@@ -201,6 +205,11 @@ export class WordParty extends Module {
      */
     async lookupWpp(interaction){
         await interaction.acknowledge();
+        let context = await Context.buildFromCommandInteraction(interaction);
+        if(!(await this.perms.checkPermission(context, "wordparty.command.wpp"))){
+            await interaction.createFollowup(`🚫 You do not have permission to use the wpp command.`);
+            return;
+        }
         let options = interaction.data.options;
         const key = options.find(opt => opt.name == "list").value;
         const sequence = options.find(opt => opt.name == "sequence").value;
