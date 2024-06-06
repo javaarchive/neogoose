@@ -7,7 +7,7 @@ configureDotenv();
 
 const bot = new Client(process.env.TOKEN, {
     restMode: true,
-    maxShards: "auto",
+    // maxShards: "auto",
     gateway: {
         intents: ["guilds","guildMembers","messageContent","guildMessages","guildPresences"] // hopefully this never gets big enough to the point where I have to workaround messageContent intent.
     }

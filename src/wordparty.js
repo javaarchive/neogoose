@@ -14,8 +14,6 @@ const LISTS = {
     "Unofficial Bomb Party Words": "assets/bombparty.txt"
 }
 
-const TRIES = 32768 * 32;
-
 // very bad bomb party style game
 export class WordParty extends Module {
 
@@ -124,6 +122,33 @@ export class WordParty extends Module {
                 }
             ]
         }, this.newRound.bind(this), ["new_wordparty"]);
+
+        this.registerCommand({
+            name: "wpp",
+            description: "Check how many words per part a sequence is.",
+            options: [
+                {
+                    name: "list",
+                    type: Constants.ApplicationCommandOptionTypes.STRING,
+                    description: "List of character sequences to use...",
+                    required: true,
+                    choices: Object.entries(LISTS).map(pair => {
+                        return {
+                            name: pair[0],
+                            value: pair[0]
+                        }
+                    })
+                },
+                {
+                    name: "sequence",
+                    type: Constants.ApplicationCommandOptionTypes.STRING,
+                    min_length: 2,
+                    max_length: 3,
+                    required: true,
+                    description: "sequence to lookup"
+                }
+            ]
+        }, this.lookupWpp.bind(this), []);
         
         this.environment.registerOtherInteractionHandler("presubmit", "autocomplete", this.presubmit.bind(this));
     }
@@ -133,7 +158,6 @@ export class WordParty extends Module {
     /**
      *
      * @param {CommandInteraction} interaction
-     * @memberof Example
      */
     async placeholder(interaction){
         await interaction.acknowledge();
@@ -147,7 +171,6 @@ export class WordParty extends Module {
     /**
      *
      * @param {CommandInteraction} interaction
-     * @memberof Example
      */
     async newRound(interaction){
         await interaction.acknowledge();
@@ -170,6 +193,23 @@ export class WordParty extends Module {
             list: key,
             subseq: subseq
         };
+    }
+
+    /**
+     *
+     * @param {CommandInteraction} interaction
+     */
+    async lookupWpp(interaction){
+        await interaction.acknowledge();
+        let options = interaction.data.options;
+        const key = options.find(opt => opt.name == "list").value;
+        const sequence = options.find(opt => opt.name == "sequence").value;
+        if(this.wpp[key][sequence]){
+            const count = this.wpp[key][sequence];
+            await interaction.createFollowup(`The sequence "${sequence}" appears exactly **${count}** times in the list "${key}".`);
+        }else{
+            await interaction.createFollowup("No words in that dictionary contain that sequence of characters. Maybe your sequence was also not 2 to 3 characters (computation uncached).");
+        }
     }
 
     /**
