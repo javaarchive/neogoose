@@ -50,6 +50,25 @@ export class Example extends Module {
 
     async tick() {
         this.environment.emit("scheduler_tick");
+        let tasks = await this.ScheduledTasks.findAll({
+            where: {
+                time: {
+                    [Op.lte]: Date.now()
+                }
+            }
+        });
+        await this.ScheduledTasks.destroy({
+            where: {
+                time: {
+                    [Op.lte]: Date.now()
+                }
+            }
+        });
+        tasks.forEach((task) => {
+            // execute task
+            let mod = this.environment.getModule(task.module);
+            mod[task.func].apply(mod, ...args);
+        });
 
     }
 
