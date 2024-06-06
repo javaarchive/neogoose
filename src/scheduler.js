@@ -6,14 +6,17 @@ import Context from "./context.js";
 
 import {Permissions} from "./permissions.js";
 
+import cron from "node-cron";
+
 export class Example extends Module {
 
-    id = "example";
-    aliases = ["test", "testing"]
+    id = "scheduler";
+    aliases = ["scheduling", "cron"]
 
     /**
      * Creates an instance of this module.
      * @param {import("./environment.js").Environment} environment
+     * @memberof Example
      */
     constructor(environment){
         super(environment, this.id); // TODO: check if using this before super will error
@@ -22,41 +25,38 @@ export class Example extends Module {
     /**
      * @returns {Permissions}
      * @readonly
+     * @memberof Example
      */
     get perms(){
         return this.environment.getModule("perms");
     }
 
     async load(){
-        // this.environment.sequelize.define
-
-        // get perm module to register perms
-
-        this.logger.info("Something");
-
-        // Please edit these to not conflict
-
-        this.registerCommand({
-            name: "test",
-            description: "Test command for perms.",
-            options: [
-                {
-                    name: "key",
-                    type: Constants.ApplicationCommandOptionTypes.STRING,
-                    description: "Permission key to change",
-                    required: true,
-                    // autocomplete: true
-                }
-            ]
-        }, this.test.bind(this), ["debug_perm"]);
-        
-        // this.environment.registerOtherInteractionHandler("test", "autocomplete", this.autocompleteTestPerm.bind(this));
+        this.logger.info("Loading scheduler");
+        this.ScheduledTasks = this.environment.sequelize.define("ScheduledTasks", {
+            time: DataTypes.INTEGER,
+            module: DataTypes.STRING,
+            func: DataTypes.STRING,
+            args: DataTypes.JSON
+        });
     }
-    
+
+    async init(){
+        this.logger.info("Binding scheduler to cron.");
+        cron.schedule('* * * * *', this.tick.bind(this));
+    }
+
+
+
+    async tick() {
+        this.environment.emit("scheduler_tick");
+
+    }
 
     /**
      *
      * @param {CommandInteraction} interaction
+     * @memberof Example
      */
     async test(interaction){
         await interaction.acknowledge();

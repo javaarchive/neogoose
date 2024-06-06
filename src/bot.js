@@ -6,7 +6,11 @@ import {config as configureDotenv} from "dotenv";
 configureDotenv();
 
 const bot = new Client(process.env.TOKEN, {
-    restMode: true
+    restMode: true,
+    maxShards: "auto",
+    gateway: {
+        intents: ["guilds","guildMembers","messageContent","guildMessages","guildPresences"] // hopefully this never gets big enough to the point where I have to workaround messageContent intent.
+    }
 });
 
 const environment = Environment.load_from_env(bot);

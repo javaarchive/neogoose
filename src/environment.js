@@ -1,5 +1,5 @@
 import {EventEmitter} from "events";
-import {AutocompleteInteraction, Client, CommandInteraction} from "@projectdysnomia/dysnomia";
+import {AutocompleteInteraction, Client, CommandInteraction, ModalSubmitInteraction} from "@projectdysnomia/dysnomia";
 import {Sequelize} from "sequelize";
 import { getDefaultLogger } from "./logger.js";
 
@@ -275,6 +275,9 @@ class Environment extends EventEmitter {
                 }else{
                     await cmdInteraction.createMessage(this.createError(`${cmdInteraction.data.name} did not have a handler registered.`, true));
                 }
+            }else if(anyInteraction instanceof ModalSubmitInteraction){
+                // TODO
+                
             }else if(anyInteraction instanceof AutocompleteInteraction){
                 /**
                  * @param {AutocompleteInteraction}

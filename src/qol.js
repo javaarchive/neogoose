@@ -6,17 +6,17 @@ import Context from "./context.js";
 
 import {Permissions} from "./permissions.js";
 
-export class Example extends Module {
+export class QualityOfLife extends Module {
 
-    id = "example";
-    aliases = ["test", "testing"]
+    id = "qol";
+    aliases = ["qualityoflife"]
 
     /**
      * Creates an instance of this module.
      * @param {import("./environment.js").Environment} environment
      */
     constructor(environment){
-        super(environment, this.id); // TODO: check if using this before super will error
+        super(environment, "qol");
     }
 
     /**
@@ -32,23 +32,14 @@ export class Example extends Module {
 
         // get perm module to register perms
 
-        this.logger.info("Something");
+        this.logger.info("qol loading");
 
         // Please edit these to not conflict
 
         this.registerCommand({
-            name: "test",
-            description: "Test command for perms.",
-            options: [
-                {
-                    name: "key",
-                    type: Constants.ApplicationCommandOptionTypes.STRING,
-                    description: "Permission key to change",
-                    required: true,
-                    // autocomplete: true
-                }
-            ]
-        }, this.test.bind(this), ["debug_perm"]);
+            name: "Snapshot Status",
+            type: Constants.ApplicationCommandTypes.USER
+        }, this.statussnap.bind(this));
         
         // this.environment.registerOtherInteractionHandler("test", "autocomplete", this.autocompleteTestPerm.bind(this));
     }
@@ -58,10 +49,21 @@ export class Example extends Module {
      *
      * @param {CommandInteraction} interaction
      */
-    async test(interaction){
+    async statussnap(interaction){
         await interaction.acknowledge();
-        await interaction.createFollowup("HI");
+        const target = interaction.data.target_id;
+        const guild = this.bot.guilds.get(interaction.guildID);
+        if(guild.members.get(target).activities && guild.members.get(target).activities.length > 0){
+            const report = JSON.stringify(guild.members.get(target).activities, null, 4);
+            await interaction.createFollowup("```json\n" + report + "\n```");
+        }else{
+            await interaction.createFollowup({
+                content: "I can't see any activities on the user's profile.",
+                flags: 64
+            });
+        }
+        
     }
 }
 
-export default Example;
+export default QualityOfLife;
