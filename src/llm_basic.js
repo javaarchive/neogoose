@@ -66,19 +66,20 @@ export class BasicLLM extends Module {
             limit: 25
         });
         let chatlog = last_few_messages.map(message => `${message.author.username}: ${message.content}`).join("\n")
+        console.log(chatlog);
         let response = await this.llm.small.chat.completions.create({
             messages: [
                 {
                     role: "system",
-                    messages: "Analyze the chat log and provide a short summary of the conversation."
+                    content: "Analyze the chat log and provide a brief summary of the conversation."
                 },
                 {
                     role: "user",
-                    message: chatlog
+                    content: chatlog
                 }
-            ],
-            model: "gpt-4-32k"
+            ]
         });
+        console.log(response);
         await interaction.createFollowup({
             content: response.choices[0].message.content,
             allowedMentions: {
