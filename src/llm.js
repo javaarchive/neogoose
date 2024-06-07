@@ -50,17 +50,17 @@ export class LLM extends Module {
 
         this.small = new OpenAI({
             apiKey: process.env.LLM_SMALL_API_KEY,
-            baseURLL: process.env.LLM_SMALL_BASE_URL
+            baseURL: process.env.LLM_SMALL_BASE_URL
         });
 
         this.medium = new OpenAI({
             apiKey: process.env.LLM_MEDIUM_API_KEY,
-            baseURLL: process.env.LLM_MEDIUM_BASE_URL
+            baseURL: process.env.LLM_MEDIUM_BASE_URL
         });
 
         this.large = new OpenAI({
             apiKey: process.env.LLM_LARGE_API_KEY,
-            baseURLL: process.env.LLM_LARGE_BASE_URL
+            baseURL: process.env.LLM_LARGE_BASE_URL
         });
     }
 }
