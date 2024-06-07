@@ -50,6 +50,13 @@ export class BasicLLM extends Module {
             description: "Attempt to summarize.",
             options: []
         }, this.summarize.bind(this), ["tldr"]);
+
+        this.registerCommand({
+            name: "Reply",
+            // description: "Attempt to summarize.",
+            // options: []
+            type: Constants.ApplicationCommandTypes.MESSAGE
+        }, this.reply.bind(this));
         
         // this.environment.registerOtherInteractionHandler("test", "autocomplete", this.autocompleteTestPerm.bind(this));
     }
@@ -67,13 +74,19 @@ export class BasicLLM extends Module {
         });
         last_few_messages.shift(); // the bot itself creates a message somehow
         last_few_messages.reverse();
-        let chatlog = last_few_messages.map(message => `${message.author.username}: ${message.content}`).join("\n")
+        let chatlog = last_few_messages.map(message => {
+            let content = message.content;
+            if(message.author.id == this.bot.user.id){
+                content = "*You quickly think and write a short summary.*"
+            }
+            return `${message.author.username}: ${content}`;
+        }).join("\n")
         console.log(chatlog);
         let response = await this.llm.small.chat.completions.create({
             messages: [
                 {
                     role: "system",
-                    content: "Analyze the chat log and provide a brief summary of the conversation."
+                    content: "Analyze the chat log and provide a brief short summary of the conversation."
                 },
                 {
                     role: "user",
@@ -92,6 +105,18 @@ export class BasicLLM extends Module {
                 users: false
             }
         });
+    }
+
+    /**
+     *
+     * @param {CommandInteraction} interaction
+     */
+    async reply(interaction){
+        await interaction.acknowledge();
+        let system_prompt = await interaction.createModal({
+            title: "System prompt",
+            custom_id: "Reply:system"
+        })
     }
 }
 

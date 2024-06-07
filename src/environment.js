@@ -280,13 +280,32 @@ class Environment extends EventEmitter {
                 
             }else if(anyInteraction instanceof AutocompleteInteraction){
                 /**
-                 * @param {AutocompleteInteraction}
+                 * @type {AutocompleteInteraction}
                  */
                 let autoCompleteInteraction = anyInteraction;
                 let name = autoCompleteInteraction.data.name;
                 await this.triggerInteraction(name, "autocomplete", autoCompleteInteraction);
+            }else if(anyInteraction instanceof ModalSubmitInteraction){
+                /**
+                 * @type {ModalSubmitInteraction}
+                 */
+                let modalSubmitnteraction = anyInteraction;
+                if(modalSubmitnteraction.data && modalSubmitnteraction.data.custom_id){
+                    let customIdSplit = modalSubmitnteraction.data.custom_id.split(":");
+                    let potModel = this.getModule(customIdSplit[0]);
+                    if(customIdSplit[0] && potModel){
+                        if(potModel.onModalSubmit){
+                            potModel.onModalSubmit(modalSubmitnteraction); 
+                        }
+                    }else{
+                        await this.triggerInteraction(customIdSplit[0], "modalsubmit", modalSubmitnteraction);
+                    }
+                }else{
+                    this.emit("unhandled:modalsubmit", modalSubmitnteraction);
+                }
             }
         });
+
     }
 
     async sync(){
