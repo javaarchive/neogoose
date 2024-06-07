@@ -76,7 +76,8 @@ export class BasicLLM extends Module {
                     role: "user",
                     message: chatlog
                 }
-            ] 
+            ],
+            model: "gpt-4-32k"
         });
         await interaction.createFollowup({
             content: response.choices[0].message.content,
