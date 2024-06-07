@@ -321,8 +321,14 @@ class Environment extends EventEmitter {
     }
 
     installErrorHandlingHooks(){
-        process.on("unhandledRejection", this.logger.error.bind(this.logger));
-        process.on("uncaughtException", this.logger.error.bind(this.logger));
+        process.on("unhandledRejection", (rejection) => {
+            this.logger.error(rejection);
+            console.trace();
+        });
+        process.on("uncaughtException", (exception) => {
+            this.logger.error(exception);
+            console.trace();
+        });
     }
 }
 
