@@ -7,7 +7,7 @@ import Context from "./context.js";
 import {Permissions} from "./permissions.js";
 import LLM from "./llm.js";
 
-export class Example extends Module {
+export class BasicLLM extends Module {
 
     id = "basic-llm";
     aliases = ["llm-test"]
@@ -90,4 +90,4 @@ export class Example extends Module {
     }
 }
 
-export default Example;
+export default BasicLLM;
