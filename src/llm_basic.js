@@ -65,6 +65,8 @@ export class BasicLLM extends Module {
         let last_few_messages = await interaction.channel.getMessages({
             limit: 25
         });
+        last_few_messages.shift(); // the bot itself creates a message somehow
+        last_few_messages.reverse();
         let chatlog = last_few_messages.map(message => `${message.author.username}: ${message.content}`).join("\n")
         console.log(chatlog);
         let response = await this.llm.small.chat.completions.create({
@@ -77,7 +79,8 @@ export class BasicLLM extends Module {
                     role: "user",
                     content: chatlog
                 }
-            ]
+            ],
+            model: "phi3"
         });
         console.log(response);
         await interaction.createFollowup({
