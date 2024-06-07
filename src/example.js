@@ -16,7 +16,7 @@ export class Example extends Module {
      * @param {import("./environment.js").Environment} environment
      */
     constructor(environment){
-        super(environment, this.id); // TODO: check if using this before super will error
+        super(environment, "example"); // TODO: check if using this before super will error
     }
 
     /**

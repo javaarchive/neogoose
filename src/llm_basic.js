@@ -17,7 +17,7 @@ export class BasicLLM extends Module {
      * @param {import("./environment.js").Environment} environment
      */
     constructor(environment){
-        super(environment, this.id); // TODO: check if using this before super will error
+        super(environment, "basic-llm"); // TODO: check if using this before super will error
     }
 
     /**
