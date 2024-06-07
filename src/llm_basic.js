@@ -46,7 +46,7 @@ export class BasicLLM extends Module {
         // Please edit these to not conflict
 
         this.registerCommand({
-            name: "Summarize",
+            name: "summarize",
             description: "Attempt to summarize.",
             options: []
         }, this.summarize.bind(this), ["tldr"]);
