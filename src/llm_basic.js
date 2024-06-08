@@ -48,7 +48,22 @@ export class BasicLLM extends Module {
         this.registerCommand({
             name: "summarize",
             description: "Attempt to summarize.",
-            options: []
+            options: [
+                {
+                    name: "messages",
+                    type: Constants.ApplicationCommandOptionTypes.INTEGER,
+                    min_value: 5,
+                    max_value: 100,
+                    description: "Upper bound limit of messages to look at for summary",
+                    requried: false
+                },
+                {
+                    name: "around",
+                    type: Constants.ApplicationCommandOptionTypes.STRING,
+                    description: "Snowflake ID of messages to summarize around",
+                    required: false
+                }
+            ]
         }, this.summarize.bind(this), ["tldr"]);
 
         this.registerCommand({
@@ -69,11 +84,18 @@ export class BasicLLM extends Module {
     async summarize(interaction){
         await interaction.acknowledge();
         // send llm request
+
+        const limit = (interaction.data.options.find(option => option.name == "messages") || {value: 25}).value;
+        const around = (interaction.data.options.find(option => option.name == "around") || {value: null}).value;
+
         let last_few_messages = await interaction.channel.getMessages({
-            limit: 25
+            limit: limit,
+            around: around
         });
-        last_few_messages.shift(); // the bot itself creates a message somehow
-        last_few_messages.reverse();
+        // last_few_messages.shift(); // the bot itself creates a message somehow
+        // last_few_messages.reverse();
+        // chronologibal sorting
+        last_few_messages.sort((a,b) => (BigInt(a.id) - BigInt(b.id)));
         let chatlog = last_few_messages.map(message => {
             let content = message.content;
             if(message.author.id == this.bot.user.id){
@@ -93,7 +115,7 @@ export class BasicLLM extends Module {
                     content: chatlog
                 }
             ],
-            model: "phi3"
+            model: "phi3:mini-128k" // phi go brrr
         });
         console.log(response);
         await interaction.createFollowup({
