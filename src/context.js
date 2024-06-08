@@ -152,7 +152,8 @@ export class Context {
             member: this.memberID,
             message: this.messageID,
             thread: this.threadID,
-            roles: this.roles.map(role => role.id)
+            roles: this.roles.map(role => role.id),
+            guildID: this.guildID
         };
     }
 }

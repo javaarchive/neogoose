@@ -205,7 +205,7 @@ export class WordParty extends Module {
      */
     async lookupWpp(interaction){
         await interaction.acknowledge();
-        let context = await Context.buildFromCommandInteraction(interaction);
+        let context = await Context.buildFromCommandInteraction(this.environment, interaction);
         if(!(await this.perms.checkPermission(context, "wordparty.command.wpp"))){
             await interaction.createFollowup(`🚫 You do not have permission to use the wpp command.`);
             return;
