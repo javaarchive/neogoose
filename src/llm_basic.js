@@ -137,7 +137,7 @@ export class BasicLLM extends Module {
     async reply(interaction){
         await interaction.createModal({
             title: "System prompt",
-            custom_id: "Reply:system:" + interaction.channel.id + ":" +interaction.message.id,
+            custom_id: "Reply:system:" + interaction.channel.id + ":" +interaction.data.resolved.messages.keys().next().value,
             components: [
                 {
                     type: Constants.ComponentTypes.ACTION_ROW,
@@ -216,7 +216,8 @@ export class BasicLLM extends Module {
             flags: 64
         });
         // run prompt with medium llm
-        let [cmdName, mid, channelID, messageID] = interaction.custom_id.split(":");
+        console.log(interaction.data.custom_id);
+        let [cmdName, mid, channelID, messageID] = interaction.data.custom_id.split(":");
         await this.replyUser(channelID, messageID, prompt);
         /*await interaction.createFollowup({
             content: "The response has been generated. In case you don't like it, here's a button to reroll.",
@@ -244,7 +245,7 @@ export class BasicLLM extends Module {
      */
     async reroll(interaction){
         await interaction.acknowledge();
-        let [cmdName, mid, channelID, messageID] = interaction.custom_id.split(":");
+        let [cmdName, mid, channelID, messageID] = interaction.data.custom_id.split(":");
         // await this.replyUser(channelID, messageID, ""); // TODO: figure out prompt retrieval
     }
 
