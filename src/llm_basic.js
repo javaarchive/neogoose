@@ -95,7 +95,7 @@ export class BasicLLM extends Module {
         // last_few_messages.shift(); // the bot itself creates a message somehow
         // last_few_messages.reverse();
         // chronologibal sorting
-        last_few_messages.sort((a,b) => (BigInt(a.id) - BigInt(b.id)));
+        last_few_messages.sort((a,b) => Number(BigInt(a.id) - BigInt(b.id)) );
         let chatlog = last_few_messages.map(message => {
             let content = message.content;
             if(message.author.id == this.bot.user.id){
