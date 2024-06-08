@@ -1,7 +1,7 @@
 import { DataTypes, Op } from "sequelize";
 import {Module, OPTION_AUTOCOMPLETE_DEFAULT} from "./module.js";
 
-import {AutocompleteInteraction, CommandInteraction, Constants} from "@projectdysnomia/dysnomia";
+import {AutocompleteInteraction, CommandInteraction, ComponentInteraction, Constants, ModalSubmitInteraction, TextChannel} from "@projectdysnomia/dysnomia";
 import Context from "./context.js";
 
 import {Permissions} from "./permissions.js";
@@ -73,7 +73,8 @@ export class BasicLLM extends Module {
             type: Constants.ApplicationCommandTypes.MESSAGE
         }, this.reply.bind(this));
         
-        // this.environment.registerOtherInteractionHandler("test", "autocomplete", this.autocompleteTestPerm.bind(this));
+        this.environment.registerOtherInteractionHandler("Reply", "modalSubmit", this.replyModalSubmit.bind(this));
+        this.environment.registerOtherInteractionHandler("Reply", "component", this.reroll.bind(this));
     }
     
 
@@ -115,7 +116,7 @@ export class BasicLLM extends Module {
                     content: chatlog
                 }
             ],
-            model: "phi3:mini-128k" // phi go brrr
+            model: "phi3:medium-128k" // phi go brrr
         });
         console.log(response);
         await interaction.createFollowup({
@@ -134,12 +135,120 @@ export class BasicLLM extends Module {
      * @param {CommandInteraction} interaction
      */
     async reply(interaction){
-        await interaction.acknowledge();
-        let system_prompt = await interaction.createModal({
+        await interaction.createModal({
             title: "System prompt",
-            custom_id: "Reply:system"
-        })
+            custom_id: "Reply:system:" + interaction.channel.id + ":" +interaction.message.id,
+            components: [
+                {
+                    type: Constants.ComponentTypes.ACTION_ROW,
+                    components: [
+                        {
+                            type: Constants.ComponentTypes.TEXT_INPUT,
+                            label: "System Prompt",
+                            name: "prompt",
+                            placeholder: "Act as a cute catgirl with a playful and mischievous personality.",
+                            style: Constants.TextInputStyles.PARAGRAPH,
+                            custom_id: "Reply:prompt"
+                        }
+                    ]
+                }
+            ]
+        });
+        await interaction.createFollowup({
+            content: "I've sent a message to you for a system prompt to use for my reply!",
+            flags: 64
+        });
+        // await interaction.acknowledge();
     }
+
+    async replyUser(channelID, messageID, systemPrompt, overwriteMessageID = null){
+        /** @type {TextChannel} */
+        let channel = await this.bot.getChannel(channelID);
+        let message = await channel.getMessage(messageID);
+        let content = message.content;
+        
+        let response = await this.llm.medium.chat.completions.create({
+            model: "llama3",
+            messages: [
+                {
+                    role: "system",
+                    content: systemPrompt
+                },
+                {
+                    role: "user",
+                    content: content
+                }
+            ]
+        });
+
+        let responseContent = response.choices[0].message.content;
+
+        if(overwriteMessageID){
+            let message = await channel.getMessage(overwriteMessageID);
+            message.edit(responseContent);
+            return message;
+        }else{
+            let message = await channel.createMessage({
+                content: responseContent,
+                allowedMentions: {
+                    everyone: false,
+                    repliedUser: true,
+                    roles: false,
+                    users: false
+                },
+                messageReference: {
+                    messageID: messageID
+                }
+            });
+            return message;
+        }
+    }
+
+    /**
+     *
+     * @param {ModalSubmitInteraction} interaction
+     */
+    async replyModalSubmit(interaction){
+        await interaction.acknowledge();
+        let prompt = interaction.data.components[0].components[0].value;
+        await interaction.createFollowup({
+            content: "Ok, I'll be generating a reply then...",
+            flags: 64
+        });
+        // run prompt with medium llm
+        let [cmdName, mid, channelID, messageID] = interaction.custom_id.split(":");
+        await this.replyUser(channelID, messageID, prompt);
+        /*await interaction.createFollowup({
+            content: "The response has been generated. In case you don't like it, here's a button to reroll.",
+            flags: 64,
+            components: [
+                {
+                    type: Constants.ComponentTypes.ACTION_ROW,
+                    components: [
+                        {
+                            type: Constants.ComponentTypes.BUTTON,
+                            style: Constants.ButtonStyles.DANGER,
+                            emoji: "🎲",
+                            custom_id: `Reply:reroll:${channelID}:${messageID}`,
+                            label: "Regenerate"
+                        }
+                    ]
+                }
+            ]
+        });*/
+    }
+
+    /**
+     *
+     * @param {ComponentInteraction} interaction
+     */
+    async reroll(interaction){
+        await interaction.acknowledge();
+        let [cmdName, mid, channelID, messageID] = interaction.custom_id.split(":");
+        // await this.replyUser(channelID, messageID, ""); // TODO: figure out prompt retrieval
+    }
+
+
 }
 
 export default BasicLLM;

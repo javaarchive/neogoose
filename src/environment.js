@@ -57,10 +57,13 @@ class Environment extends EventEmitter {
     }
 
     otherInteractionHandlers = {
-        "autocomplete": new Map()
+        "autocomplete": new Map(),
+        "modalSubmit": new Map(),
+        "component": new Map(),
     }
 
     async triggerInteraction(name, type, interaction){
+        this.logger.info("Dispatch other interaction to handler for cmd " + name + " type " + type);
         let id = this.resolveAlias(name);
         if(this.otherInteractionHandlers[type] && this.otherInteractionHandlers[type].get(id)){
             let func = this.otherInteractionHandlers[type].get(id);
@@ -266,6 +269,7 @@ class Environment extends EventEmitter {
 
     async init(){
         this.bot.on("interactionCreate", async (anyInteraction) => {
+            console.log(anyInteraction);
             if(anyInteraction instanceof CommandInteraction){
                 let cmdInteraction = anyInteraction;
                 this.logger.info("Recv command interaction " + cmdInteraction.data.id + " " + cmdInteraction.data.name);
@@ -275,9 +279,6 @@ class Environment extends EventEmitter {
                 }else{
                     await cmdInteraction.createMessage(this.createError(`${cmdInteraction.data.name} did not have a handler registered.`, true));
                 }
-            }else if(anyInteraction instanceof ModalSubmitInteraction){
-                // TODO
-                
             }else if(anyInteraction instanceof AutocompleteInteraction){
                 /**
                  * @type {AutocompleteInteraction}
@@ -289,19 +290,14 @@ class Environment extends EventEmitter {
                 /**
                  * @type {ModalSubmitInteraction}
                  */
-                let modalSubmitnteraction = anyInteraction;
-                if(modalSubmitnteraction.data && modalSubmitnteraction.data.custom_id){
-                    let customIdSplit = modalSubmitnteraction.data.custom_id.split(":");
-                    let potModel = this.getModule(customIdSplit[0]);
-                    if(customIdSplit[0] && potModel){
-                        if(potModel.onModalSubmit){
-                            potModel.onModalSubmit(modalSubmitnteraction); 
-                        }
-                    }else{
-                        await this.triggerInteraction(customIdSplit[0], "modalsubmit", modalSubmitnteraction);
-                    }
+                let modalSubmitInteraction = anyInteraction;
+                if(modalSubmitInteraction.data && modalSubmitInteraction.data.custom_id){
+                    let customIdSplit = modalSubmitInteraction.data.custom_id.split(":");
+                    await this.triggerInteraction(customIdSplit[0], "modalSubmit", modalSubmitInteraction);
+                    this.logger.info("Triggering interaction for " + customIdSplit[0]);
                 }else{
-                    this.emit("unhandled:modalsubmit", modalSubmitnteraction);
+                    this.logger.warn("Undirected modal submit " + modalSubmitInteraction.data.custom_id);
+                    this.emit("unhandled:modalsubmit", modalSubmitInteraction);
                 }
             }
         });
