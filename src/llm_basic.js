@@ -85,7 +85,9 @@ export class BasicLLM extends Module {
     async summarize(interaction){
         await interaction.acknowledge();
         // send llm request
-
+        if(!interaction.data.options){
+            interaction.data.options = [];
+        }
         const limit = (interaction.data.options.find(option => option.name == "messages") || {value: 25}).value;
         const around = (interaction.data.options.find(option => option.name == "around") || {value: null}).value;
 
