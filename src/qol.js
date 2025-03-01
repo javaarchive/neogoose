@@ -40,6 +40,18 @@ export class QualityOfLife extends Module {
             name: "Snapshot Status",
             type: Constants.ApplicationCommandTypes.USER
         }, this.statussnap.bind(this));
+
+        this.registerCommand({
+            "name": "launchtest",
+            "description": "Launch something",
+            // PRIMARY_ENTRY_POINT is type 4
+            "type": 4,
+            // DISCORD_LAUNCH_ACTIVITY is handler value 2
+            "handler": 2,
+            // integration_types and contexts define where your command can be used (see below)
+            "integration_types": [0, 1],
+            "contexts": [0, 1, 2]
+          }, this.statussnap.bind(this));
         
         // this.environment.registerOtherInteractionHandler("test", "autocomplete", this.autocompleteTestPerm.bind(this));
     }

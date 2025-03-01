@@ -1,4 +1,4 @@
-import { Client } from "@projectdysnomia/dysnomia";
+import { Client, Constants } from "@projectdysnomia/dysnomia";
 
 export const OPTION_AUTOCOMPLETE_DEFAULT = {value: "", focused: false};
 
@@ -36,6 +36,8 @@ class Module {
      */
     registerCommand(command, handler = null, aliases = []){
         this.commands.push(command);
+        command["integration_types"] = [0,1]; // application + user
+        command["contexts"] = [0,1,2]; // group dm, bot dm, guild
         if(handler){
             this.registerCommandHandler(command, handler);
         }

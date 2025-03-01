@@ -207,11 +207,22 @@ class Environment extends EventEmitter {
         }
         for(let guildID of eaGuilds){
             this.logger.info("Propogating to " + guildID);
-            await this.bot.bulkEditGuildCommands(guildID, this.commands);
+            await this.bot.bulkEditGuildCommands(guildID, this.commands.filter(cmd => cmd.type != 4)); // filter activity commands
             this.logger.info("Propogated to " + guildID);
         }
         this.logger.info("Propogating global commands.");
+        let existingCommands = await this.bot.getCommands();
+        // console.log(existingCommands);
+        /*for(let command of existingCommands){
+            this.logger.info("Purging command " + command.name + " id: " + command.id);
+            await this.bot.deleteCommand(command.id);
+        }*/
+        this.logger.info("Propogating new commands");
         await this.bot.bulkEditCommands(this.commands);
+        /*for(let command of this.commands){
+            this.logger.info("Slow propogate " + command.name + "...");
+            await this.bot.createCommand(command);
+        }*/
         this.logger.info("Propogated global commands.");
         this.bot.on("interactionCreate", (interaction) => {
             this.emit("interactionCreate", interaction);

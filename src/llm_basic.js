@@ -83,6 +83,7 @@ export class BasicLLM extends Module {
      * @param {CommandInteraction} interaction
      */
     async summarize(interaction){
+        console.log(interaction.data);
         await interaction.acknowledge();
         // send llm request
         if(!interaction.data.options){
@@ -118,7 +119,8 @@ export class BasicLLM extends Module {
                     content: chatlog
                 }
             ],
-            model: "phi3:medium-128k" // phi go brrr
+            model: "qwen2.5:32b"
+            // model: "phi3:medium-128k" // phi go brrr
         });
         console.log(response);
         await interaction.createFollowup({
@@ -170,7 +172,7 @@ export class BasicLLM extends Module {
         let content = message.content;
         
         let response = await this.llm.medium.chat.completions.create({
-            model: "llama3",
+            model: "qwen2.5:32b",
             messages: [
                 {
                     role: "system",

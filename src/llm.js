@@ -62,6 +62,8 @@ export class LLM extends Module {
             apiKey: process.env.LLM_LARGE_API_KEY,
             baseURL: process.env.LLM_LARGE_BASE_URL
         });
+
+        // optional level: "the llm that costs money mb"
     }
 }
 

@@ -11,8 +11,8 @@ import fs from "fs";
 // that's it
 const LISTS = {
     "Debian American English": "/usr/share/dict/american-english",
-    "Debian British English": "/usr/share/dict/canadian-english",
-    "Debian Canadian English": "/usr/share/dict/british-english",
+    //"Debian Canadian English": "/usr/share/dict/canadian-english",
+    //"Debian British English": "/usr/share/dict/british-english",
     "Unofficial Bomb Party Words": "assets/bombparty.txt"
 }
 

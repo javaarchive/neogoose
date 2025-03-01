@@ -11,7 +11,7 @@
   "author": "javaarchive",
   "license": "GPL",
   "dependencies": {
-    "@projectdysnomia/dysnomia": "^0.1.3",
+    "@projectdysnomia/dysnomia": "github:projectdysnomia/dysnomia#dev",
     "dotenv": "^16.4.5",
     "node-cron": "^3.0.3",
     "openai": "^4.28.0",
