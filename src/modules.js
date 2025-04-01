@@ -5,6 +5,7 @@ import LLM from "./llm.js";
 import BasicLLM from "./llm_basic.js";
 import LLMConversations from "./llm_advanced.js";
 import Starboard from "./starboard.js";
+import MattbotClone from "./mattbot.js";
 
 const modules = [
     Permissions,
@@ -14,7 +15,8 @@ const modules = [
     // basic llm implementation, TODO: write more advanced version with actually useful features
     BasicLLM,
     LLMConversations,
-    Starboard
+    Starboard,
+    MattbotClone
 ];
 
 export default modules;

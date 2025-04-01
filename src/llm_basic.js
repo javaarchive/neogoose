@@ -108,7 +108,7 @@ export class BasicLLM extends Module {
             return `${message.author.username}: ${content}`;
         }).join("\n")
         console.log(chatlog);
-        let response = await this.llm.small.chat.completions.create({
+        let response = await this.llm.large.chat.completions.create({
             messages: [
                 {
                     role: "system",
@@ -119,7 +119,8 @@ export class BasicLLM extends Module {
                     content: chatlog
                 }
             ],
-            model: "qwen2.5:32b"
+            model: "Qwen2.5-32B-Instruct-4.5bpw-exl2",
+            // model: "qwen2.5:32b"
             // model: "phi3:medium-128k" // phi go brrr
         });
         console.log(response);
