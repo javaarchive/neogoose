@@ -32,7 +32,7 @@ export class Example extends Module {
 
         // get perm module to register perms
 
-        this.logger.info("Something");
+        this.logger.info("Example module loaded successfully");
 
         // Please edit these to not conflict
 
