@@ -4,6 +4,7 @@ import {QualityOfLife} from "./qol.js"
 import LLM from "./llm.js";
 import BasicLLM from "./llm_basic.js";
 import LLMConversations from "./llm_advanced.js";
+import Starboard from "./starboard.js";
 
 const modules = [
     Permissions,
@@ -12,7 +13,8 @@ const modules = [
     QualityOfLife,
     // basic llm implementation, TODO: write more advanced version with actually useful features
     BasicLLM,
-    LLMConversations
+    LLMConversations,
+    Starboard
 ];
 
 export default modules;
