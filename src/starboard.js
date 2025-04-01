@@ -70,14 +70,10 @@ export class Starboard extends Module {
         const fullMessage = await this.environment.bot.getMessage(message.channel.id, message.id);
         
         let starCount = 0;
-        if (fullMessage.reactions && typeof fullMessage.reactions === 'object') {
-            for (const emojiId in fullMessage.reactions) {
-                const reaction = fullMessage.reactions[emojiId];
-                if (reaction.emoji && reaction.emoji.name === this.STAR_EMOJI) {
-                    starCount = reaction.count;
-                    break;
-                }
-            }
+        
+        if (fullMessage.reactions && fullMessage.reactions[this.STAR_EMOJI]) {
+            starCount = fullMessage.reactions[this.STAR_EMOJI].count;
+            this.logger.debug(`Found ${starCount} star reactions for message ${message.id}`);
         }
         
         if (starCount === 0) return;
@@ -121,14 +117,10 @@ export class Starboard extends Module {
         const fullMessage = await this.environment.bot.getMessage(message.channel.id, message.id);
         
         let starCount = 0;
-        if (fullMessage.reactions && typeof fullMessage.reactions === 'object') {
-            for (const emojiId in fullMessage.reactions) {
-                const reaction = fullMessage.reactions[emojiId];
-                if (reaction.emoji && reaction.emoji.name === this.STAR_EMOJI) {
-                    starCount = reaction.count;
-                    break;
-                }
-            }
+        
+        if (fullMessage.reactions && fullMessage.reactions[this.STAR_EMOJI]) {
+            starCount = fullMessage.reactions[this.STAR_EMOJI].count;
+            this.logger.debug(`Found ${starCount} star reactions for message ${message.id}`);
         }
         
         const starredMessage = await this.StarredMessage.findOne({
