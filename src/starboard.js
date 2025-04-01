@@ -69,10 +69,18 @@ export class Starboard extends Module {
         
         const fullMessage = await this.environment.bot.getMessage(message.channel.id, message.id);
         
-        const starReaction = fullMessage.reactions.find(r => r.emoji.name === this.STAR_EMOJI);
-        if (!starReaction) return;
+        let starCount = 0;
+        if (fullMessage.reactions && typeof fullMessage.reactions === 'object') {
+            for (const emojiId in fullMessage.reactions) {
+                const reaction = fullMessage.reactions[emojiId];
+                if (reaction.emoji && reaction.emoji.name === this.STAR_EMOJI) {
+                    starCount = reaction.count;
+                    break;
+                }
+            }
+        }
         
-        const starCount = starReaction.count;
+        if (starCount === 0) return;
         
         let starredMessage = await this.StarredMessage.findOne({
             where: {
@@ -112,9 +120,16 @@ export class Starboard extends Module {
         
         const fullMessage = await this.environment.bot.getMessage(message.channel.id, message.id);
         
-        const starReaction = fullMessage.reactions.find(r => r.emoji.name === this.STAR_EMOJI);
-        
-        const starCount = starReaction ? starReaction.count : 0;
+        let starCount = 0;
+        if (fullMessage.reactions && typeof fullMessage.reactions === 'object') {
+            for (const emojiId in fullMessage.reactions) {
+                const reaction = fullMessage.reactions[emojiId];
+                if (reaction.emoji && reaction.emoji.name === this.STAR_EMOJI) {
+                    starCount = reaction.count;
+                    break;
+                }
+            }
+        }
         
         const starredMessage = await this.StarredMessage.findOne({
             where: {
